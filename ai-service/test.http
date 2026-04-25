@@ -1,0 +1,17 @@
+### Recommend API
+POST http://localhost:5000/recommend
+Content-Type: application/json
+
+{
+  "input": "Company has not filed annual report for 2 years"
+}
+
+### Generate Report API
+POST http://localhost:5000/generate-report
+Content-Type: application/json
+
+{
+  "input": "Company has not filed annual report for 2 years"
+}
+
+GET http://localhost:5000/health
