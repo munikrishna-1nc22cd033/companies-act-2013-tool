@@ -1,48 +1,39 @@
+import os
 from flask import Blueprint, request, jsonify
-from groq import Groq
+from services.groq_test import get_client
 
-describe_bp = Blueprint('describe', __name__)
+describe_bp = Blueprint("describe", __name__)
 
-client = Groq(api_key="REMOVEDppAOM1MDSftJ7Su9zg2tWGdyb3FYfABtlGY04M15l5HHBlcZ7sod")
 
-@describe_bp.route('/describe', methods=['POST'])
+import os
+print("ACTUAL KEY USED:", os.getenv("GROQ_API_KEY"))
+
+@describe_bp.route("/describe", methods=["POST"])
 def describe():
-
     data = request.get_json()
+    user_input = data.get("input", "")
 
-    if not data or "input" not in data:
+    if not user_input:
         return jsonify({"error": "Input is required"}), 400
 
-    user_input = data["input"]
-
-    prompt = f"""
-You are a compliance AI assistant.
-
-Given the company data:
-{user_input}
-
-Generate:
-- Summary
-- Risk Level (Low/Medium/High)
-- Key Issues
-- Suggestions
-"""
-
     try:
+        client = get_client()
+
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}]
+            model="llama-3.1-8b-instant",
+            messages=[{"role": "user", "content": user_input}]
         )
 
         output = response.choices[0].message.content
 
         return jsonify({
             "result": output,
-            "generated_at": "now"
+            "is_fallback": False
         })
 
     except Exception as e:
+        print("GROQ ERROR:", e)
         return jsonify({
-            "error": "AI failed",
-            "details": str(e)
-        }), 500
+            "result": "AI service temporarily unavailable.",
+            "is_fallback": True
+        })

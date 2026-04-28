@@ -1,63 +1,33 @@
 from flask import Blueprint, request, jsonify
-from groq import Groq
-import json
+from services.groq_test import get_client
 
-report_bp = Blueprint('report', __name__)
+report_bp = Blueprint("report", __name__)
 
-# 🔹 Put your API key here
-client = Groq(api_key="REMOVEDppAOM1MDSftJ7Su9zg2tWGdyb3FYfABtlGY04M15l5HHBlcZ7sod")
-
-@report_bp.route('/generate-report', methods=['POST'])
+@report_bp.route("/generate-report", methods=["POST"])
 def generate_report():
-
     data = request.get_json()
+    user_input = data.get("input", "")
 
-    # 🔹 Validate input
-    if not data or "input" not in data:
+    if not user_input:
         return jsonify({"error": "Input is required"}), 400
 
-    user_input = data["input"]
-
-    # 🔹 Prompt
-    prompt = f"""
-You are a compliance AI assistant.
-
-Given the issue:
-{user_input}
-
-Generate a structured JSON report:
-
-{{
-  "title": "string",
-  "summary": "string",
-  "overview": "string",
-  "key_items": ["item1", "item2"],
-  "recommendations": ["rec1", "rec2"]
-}}
-
-IMPORTANT:
-- Output ONLY JSON
-- No extra text
-"""
-
     try:
+        client = get_client()
+
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}]
+            model="llama-3.1-8b-instant",
+            messages=[{"role": "user", "content": user_input}]
         )
 
         output = response.choices[0].message.content
 
-        # 🔥 Convert string → JSON
-        try:
-            parsed = json.loads(output)
-        except:
-            parsed = output
-
-        return jsonify(parsed)
-
-    except Exception as e:
         return jsonify({
-            "error": "AI failed",
-            "details": str(e)
-        }), 500
+            "result": output,
+            "is_fallback": False
+        })
+
+    except Exception:
+        return jsonify({
+            "result": "AI service temporarily unavailable.",
+            "is_fallback": True
+        })

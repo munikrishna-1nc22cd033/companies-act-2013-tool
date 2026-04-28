@@ -1,68 +1,33 @@
 from flask import Blueprint, request, jsonify
-from groq import Groq
-import json
+from services.groq_test import get_client
 
-# 🔹 Create Blueprint
-recommend_bp = Blueprint('recommend', __name__)
+recommend_bp = Blueprint("recommend", __name__)
 
-# 🔹 Initialize Groq client (use your real API key here)
-client = Groq(api_key="REMOVEDppAOM1MDSftJ7Su9zg2tWGdyb3FYfABtlGY04M15l5HHBlcZ7sod")
-
-# 🔹 Route
-@recommend_bp.route('/recommend', methods=['POST'])
+@recommend_bp.route("/recommend", methods=["POST"])
 def recommend():
-
     data = request.get_json()
+    user_input = data.get("input", "")
 
-    # 🔹 Validate input
-    if not data or "input" not in data:
+    if not user_input:
         return jsonify({"error": "Input is required"}), 400
 
-    user_input = data["input"]
-
-    # 🔹 Prompt
-    prompt = f"""
-You are a compliance expert.
-
-Based on the issue:
-{user_input}
-
-Provide EXACTLY 3 recommendations in VALID JSON format like:
-[
-  {{
-    "action_type": "string",
-    "description": "string",
-    "priority": "High/Medium/Low"
-  }}
-]
-
-IMPORTANT:
-- Output ONLY JSON
-- Do NOT add explanation
-- Do NOT add text before/after JSON
-"""
-
     try:
-        # 🔹 Call Groq
+        client = get_client()
+
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}]
+            model="llama-3.1-8b-instant",
+            messages=[{"role": "user", "content": user_input}]
         )
 
         output = response.choices[0].message.content
 
-        # 🔥 Convert string → JSON
-        try:
-            parsed = json.loads(output)
-        except:
-            parsed = output  # fallback if AI gives invalid JSON
-
         return jsonify({
-            "recommendations": parsed
+            "result": output,
+            "is_fallback": False
         })
 
-    except Exception as e:
+    except Exception:
         return jsonify({
-            "error": "AI failed",
-            "details": str(e)
-        }), 500
+            "result": "AI service temporarily unavailable.",
+            "is_fallback": True
+        })
