@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from groq import Groq
 import json
 import os
+
 report_bp = Blueprint('report', __name__)
 
 # 🔹 Put your API key here
