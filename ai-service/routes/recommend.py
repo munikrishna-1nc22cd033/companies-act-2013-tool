@@ -1,33 +1,68 @@
 from flask import Blueprint, request, jsonify
-from services.groq_test import get_client
+from groq import Groq
+import json
+import os
 
-recommend_bp = Blueprint("recommend", __name__)
+# 🔹 Create Blueprint
+recommend_bp = Blueprint('recommend', __name__)
 
-@recommend_bp.route("/recommend", methods=["POST"])
+# 🔹 Initialize Groq client (use your real API key here)
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+# 🔹 Route
+@recommend_bp.route('/recommend', methods=['POST'])
 def recommend():
-    data = request.get_json()
-    user_input = data.get("input", "")
 
-    if not user_input:
+    data = request.get_json()
+
+    # 🔹 Validate input
+    if not data or "input" not in data:
         return jsonify({"error": "Input is required"}), 400
 
-    try:
-        client = get_client()
+    user_input = data["input"]
 
+    # 🔹 Prompt
+    prompt = f"""
+You are a compliance expert.
+
+Based on the issue:
+{user_input}
+
+Provide EXACTLY 3 recommendations in VALID JSON format like:
+[
+  {{
+    "action_type": "string",
+    "description": "string",
+    "priority": "High/Medium/Low"
+  }}
+]
+
+IMPORTANT:
+- Output ONLY JSON
+- Do NOT add explanation
+- Do NOT add text before/after JSON
+"""
+
+    try:
+        # 🔹 Call Groq
         response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
-            messages=[{"role": "user", "content": user_input}]
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}]
         )
 
         output = response.choices[0].message.content
 
+        # 🔥 Convert string → JSON
+        try:
+            parsed = json.loads(output)
+        except:
+            parsed = output  # fallback if AI gives invalid JSON
+
         return jsonify({
-            "result": output,
-            "is_fallback": False
+            "recommendations": parsed
         })
 
-    except Exception:
+    except Exception as e:
         return jsonify({
-            "result": "AI service temporarily unavailable.",
-            "is_fallback": True
-        })
+            "error": "AI failed",
+            "details": str(e)
+        }), 500
