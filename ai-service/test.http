@@ -1,0 +1,32 @@
+### Describe API
+POST http://127.0.0.1:5000/describe
+Content-Type: application/json
+
+{
+  "input": "Company has not filed annual report"
+}
+
+###
+
+### Recommend API
+POST http://127.0.0.1:5000/recommend
+Content-Type: application/json
+
+{
+  "input": "Company has not filed annual report"
+}
+
+###
+
+### Generate Report API
+POST http://127.0.0.1:5000/generate-report
+Content-Type: application/json
+
+{
+  "input": "Company has not filed annual report for 2 years"
+}
+
+###
+
+### Health API
+GET http://127.0.0.1:5000/health
