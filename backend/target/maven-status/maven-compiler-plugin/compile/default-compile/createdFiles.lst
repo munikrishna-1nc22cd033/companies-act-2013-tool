@@ -1,0 +1,5 @@
+com\example\Application.class
+com\example\service\ComplianceService.class
+com\example\controller\ComplianceController.class
+com\example\entity\ComplianceRecord.class
+com\example\repository\ComplianceRepository.class
