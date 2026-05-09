@@ -9,7 +9,7 @@ function Login({ onLogin }) {
         e.preventDefault();
 
         // simple demo login
-        if (email === "admin@gmail.com" && password === "admin") {
+        if (email === "abc@gmail.com" && password === "123") {
             onLogin(true);
         } else {
             alert("Invalid Credentials");

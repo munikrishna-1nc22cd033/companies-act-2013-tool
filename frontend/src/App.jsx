@@ -1,227 +1,452 @@
 import React, { useEffect, useState } from "react";
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [records, setRecords] = useState([]);
 
-  // Fake login
-  const handleLogin = (e) => {
-    e.preventDefault();
-    setIsLoggedIn(true);
-  };
+    // LOGIN STATE
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // Fetch backend data
-  useEffect(() => {
-    if (isLoggedIn) {
-      fetch("http://localhost:8080/records")
-        .then((res) => res.json())
-        .then((data) => setRecords(data))
-        .catch((err) => console.log(err));
-    }
-  }, [isLoggedIn]);
+    // LOGIN INPUTS
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
 
-  // LOGIN PAGE UI
-  if (!isLoggedIn) {
-    return (
-      <div style={styles.loginPage}>
-        <form onSubmit={handleLogin} style={styles.loginBox}>
-          <h2>Login</h2>
+    // RECORDS
+    const [records, setRecords] = useState([]);
 
-          <input type="email" placeholder="Email" required style={styles.input} />
-          <input type="password" placeholder="Password" required style={styles.input} />
+    // SEARCH
+    const [search, setSearch] = useState("");
 
-          <button type="submit" style={styles.button}>
-            Login
-          </button>
-        </form>
-      </div>
+    // FETCH BACKEND DATA
+    useEffect(() => {
+
+        fetch("http://localhost:8080/records")
+            .then((response) => response.json())
+            .then((data) => setRecords(data))
+            .catch((error) => console.error(error));
+
+    }, []);
+
+    // LOGIN FUNCTION
+    const handleLogin = () => {
+
+        if (email && password) {
+            setIsLoggedIn(true);
+        } else {
+            alert("Enter Email and Password");
+        }
+    };
+
+    // LOGOUT
+    const handleLogout = () => {
+        setIsLoggedIn(false);
+    };
+
+    // SEARCH FILTER
+    const filteredRecords = records.filter((record) =>
+        record.companyName
+            .toLowerCase()
+            .includes(search.toLowerCase())
     );
-  }
 
-  // DASHBOARD UI
-  return (
-    <div style={styles.dashboard}>
-      {/* SIDEBAR */}
-      <div style={styles.sidebar}>
-        <h3>Dashboard</h3>
-        <p>Compliance Records</p>
-        <p>Users</p>
-        <button style={styles.logoutBtn} onClick={() => setIsLoggedIn(false)}>
-          Logout
-        </button>
-      </div>
+    // COUNTS
+    const totalRecords = records.length;
 
-      {/* MAIN CONTENT */}
-      <div style={styles.main}>
-        <h2>Welcome, Admin!</h2>
+    const pendingRecords = records.filter(
+        (record) => record.status === "Pending"
+    ).length;
 
-        {/* CARDS */}
-        <div style={styles.cards}>
-          <div style={{ ...styles.card, background: "#28a745" }}>
-            Total Records <h3>{records.length}</h3>
-          </div>
+    const completedRecords = records.filter(
+        (record) => record.status === "Completed"
+    ).length;
 
-          <div style={{ ...styles.card, background: "#ff9800" }}>
-            Pending <h3>{records.filter(r => r.status === "Pending").length}</h3>
-          </div>
+    // EXPORT CSV
+    const exportCSV = () => {
 
-          <div style={{ ...styles.card, background: "#007bff" }}>
-            Completed <h3>{records.filter(r => r.status === "Completed").length}</h3>
-          </div>
+        const headers = [
+            "ID",
+            "Company Name",
+            "Compliance Type",
+            "Status",
+            "Due Date"
+        ];
 
-          <div style={{ ...styles.card, background: "#6f42c1" }}>
-            Users <h3>20</h3>
-          </div>
-        </div>
+        const rows = records.map((record) => [
+            record.id,
+            record.companyName,
+            record.complianceType,
+            record.status,
+            record.dueDate
+        ]);
 
-        {/* TABLE */}
-        <div style={styles.tableBox}>
-          <div style={styles.tableHeader}>
-            <input placeholder="Search..." style={styles.search} />
-            <button style={styles.exportBtn}>Export CSV</button>
-          </div>
+        let csvContent =
+            headers.join(",") + "\n" +
+            rows.map((e) => e.join(",")).join("\n");
 
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Company Name</th>
-                <th>Status</th>
-                <th>Due Date</th>
-              </tr>
-            </thead>
+        const blob = new Blob([csvContent], {
+            type: "text/csv;charset=utf-8;"
+        });
 
-            <tbody>
-              {records.map((r, index) => (
-                <tr key={index}>
-                  <td>{r.id}</td>
-                  <td>{r.companyName}</td>
-                  <td>
-                    <span
-                      style={{
-                        padding: "5px 10px",
-                        borderRadius: "5px",
-                        color: "white",
-                        background: r.status === "Completed" ? "green" : "orange",
-                      }}
+        const link = document.createElement("a");
+
+        link.href = URL.createObjectURL(blob);
+
+        link.download = "compliance_records.csv";
+
+        link.click();
+    };
+
+    // LOGIN PAGE
+    if (!isLoggedIn) {
+
+        return (
+
+            <div
+                style={{
+                    height: "100vh",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    backgroundColor: "#EAF2FF"
+                }}
+            >
+
+                <div
+                    style={{
+                        backgroundColor: "white",
+                        padding: "40px",
+                        borderRadius: "10px",
+                        width: "350px",
+                        boxShadow: "0px 0px 10px gray"
+                    }}
+                >
+
+                    <h1 style={{ textAlign: "center" }}>
+                        Login
+                    </h1>
+
+                    <input
+                        type="email"
+                        placeholder="Enter Email"
+                        value={email}
+                        onChange={(e) =>
+                            setEmail(e.target.value)
+                        }
+                        style={{
+                            width: "100%",
+                            padding: "10px",
+                            marginTop: "20px"
+                        }}
+                    />
+
+                    <input
+                        type="password"
+                        placeholder="Enter Password"
+                        value={password}
+                        onChange={(e) =>
+                            setPassword(e.target.value)
+                        }
+                        style={{
+                            width: "100%",
+                            padding: "10px",
+                            marginTop: "20px"
+                        }}
+                    />
+
+                    <button
+                        onClick={handleLogin}
+                        style={{
+                            width: "100%",
+                            padding: "12px",
+                            marginTop: "20px",
+                            backgroundColor: "#2563EB",
+                            color: "white",
+                            border: "none",
+                            cursor: "pointer"
+                        }}
                     >
-                      {r.status}
-                    </span>
-                  </td>
-                  <td>{r.dueDate}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                        Login
+                    </button>
+
+                </div>
+
+            </div>
+        );
+    }
+
+    // DASHBOARD PAGE
+
+    return (
+
+        <div
+            style={{
+                display: "flex",
+                minHeight: "100vh",
+                fontFamily: "Arial"
+            }}
+        >
+
+            {/* SIDEBAR */}
+
+            <div
+                style={{
+                    width: "220px",
+                    backgroundColor: "#16213E",
+                    color: "white",
+                    padding: "20px"
+                }}
+            >
+
+               <h2 style={{ marginBottom: "40px" }} > Dashboard </h2>
+
+                <div style={{ marginTop: "20px", fontSize: "20px", cursor: "pointer" }} > Compliance Records </div>
+
+                <div style={{ marginTop: "20px", fontSize: "20px", cursor: "pointer" }} > Users </div>
+
+                <button
+                    onClick={handleLogout}
+                    style={{
+                        marginTop: "30px",
+                        padding: "10px",
+                        width: "100%",
+                        backgroundColor: "red",
+                        color: "white",
+                        border: "none",
+                        cursor: "pointer"
+                    }}
+                >
+                    Logout
+                </button>
+
+            </div>
+
+            {/* MAIN CONTENT */}
+
+            <div
+                style={{
+                    flex: 1,
+                    backgroundColor: "#F3F4F6",
+                    padding: "20px"
+                }}
+            >
+
+               <h1 style={{ margin: 0, fontSize: "36px", letterSpacing: "1px" }} > Companies Act 2013 Compliance Tool </h1>
+               <p style={{ marginTop: "10px", fontSize: "18px" }} > Welcome To Compliance Management Dashboard </p>
+
+                {/* DASHBOARD CARDS */}
+
+                <div
+                    style={{
+                        display: "flex",
+                        gap: "20px",
+                        marginTop: "20px",
+                        flexWrap: "wrap"
+                    }}
+                >
+
+                    <div
+                        style={{
+                            backgroundColor: "#28A745",
+                            color: "white",
+                            padding: "25px",
+                            borderRadius: "10px",
+                            width: "220px",
+                            textAlign: "center"
+                        }}
+                    >
+                        <h2>Total Records</h2>
+                        <h1>{totalRecords}</h1>
+                    </div>
+
+                    <div
+                        style={{
+                            backgroundColor: "#FF9800",
+                            color: "white",
+                            padding: "20px",
+                            borderRadius: "10px",
+                            width: "220px",
+                            textAlign: "center"
+                        }}
+                    >
+                        <h2>Pending Records</h2>
+                        <h1>{pendingRecords}</h1>
+                    </div>
+
+                    <div
+                        style={{
+                            backgroundColor: "#007BFF",
+                            color: "white",
+                            padding: "25px",
+                            borderRadius: "10px",
+                            width: "220px",
+                            textAlign: "center"
+                        }}
+                    >
+                        <h2>Completed Records</h2>
+                        <h1>{completedRecords}</h1>
+                    </div>
+
+                    <div
+                        style={{
+                            backgroundColor: "#6F42C1",
+                            color: "white",
+                            padding: "20px",
+                            borderRadius: "10px",
+                            width: "220px",
+                            textAlign: "center"
+                        }}
+                    >
+                        <h2>Users</h2>
+                        <h1>20</h1>
+                    </div>
+
+                </div>
+
+                {/* TABLE */}
+
+                <div
+                    style={{
+                        backgroundColor: "white",
+                        marginTop: "30px",
+                        padding: "20px",
+                        borderRadius: "10px"
+                    }}
+                >
+
+                    <div
+                        style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            marginBottom: "20px"
+                        }}
+                    >
+
+                        {/* SEARCH */}
+
+                        <input
+                            type="text" placeholder="Search Company Name..." value={search} onChange={(e) => setSearch(e.target.value)
+                            }
+                            style={{
+                               padding: "12px", width: "320px", borderRadius: "8px", border: "2px solid #007BFF", backgroundColor: "#EFF6FF", outline: "none", fontSize: "16px"
+                            }}
+                        />
+
+                        {/* EXPORT CSV */}
+
+                        <button
+                            onClick={exportCSV}
+                            style={{
+                                padding: "10px 20px",
+                                backgroundColor: "#007BFF",
+                                color: "white",
+                                border: "none",
+                                cursor: "pointer"
+                            }}
+                        >
+                            Export CSV
+                        </button>
+
+                    </div>
+
+                    <table
+                        style={{
+                            width: "100%",
+                            borderCollapse: "collapse"
+                        }}
+                    >
+
+                        <thead>
+
+                            <tr
+                                style={{
+                                    backgroundColor: "#E5E7EB"
+                                }}
+                            >
+
+                                <th style={tableHeader}>ID</th>
+                                <th style={tableHeader}>Company Name</th>
+                                <th style={tableHeader}>Compliance Type</th>
+                                <th style={tableHeader}>Status</th>
+                                <th style={tableHeader}>Due Date</th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            {filteredRecords.map((record) => (
+
+                                <tr
+                                    key={record.id}
+                                    style={{ textAlign: "center" }}
+                                >
+
+                                    <td style={tableCell}>
+                                        {record.id}
+                                    </td>
+
+                                    <td style={tableCell}>
+                                        {record.companyName}
+                                    </td>
+
+                                    <td style={tableCell}>
+                                        {record.complianceType}
+                                    </td>
+
+                                    <td style={tableCell}>
+
+                                        <span
+                                            style={{
+                                                backgroundColor:
+                                                    record.status ===
+                                                    "Pending"
+                                                        ? "#FF9800"
+                                                        : "#28A745",
+
+                                                color: "white",
+                                                padding: "5px 10px",
+                                                borderRadius: "5px"
+                                            }}
+                                        >
+                                            {record.status}
+                                        </span>
+
+                                    </td>
+
+                                    <td style={tableCell}>
+                                        {record.dueDate}
+                                    </td>
+
+                                </tr>
+
+                            ))}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
         </div>
-      </div>
-    </div>
-  );
+    );
 }
 
-// SIMPLE CSS STYLES
-const styles = {
-  loginPage: {
-    height: "100vh",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    background: "#dbeafe",
-  },
+// TABLE HEADER STYLE
 
-  loginBox: {
-    display: "flex",
-    flexDirection: "column",
-    padding: "30px",
-    background: "white",
-    borderRadius: "10px",
-    width: "300px",
-    gap: "10px",
-  },
+const tableHeader = {
 
-  input: {
-    padding: "10px",
-    border: "1px solid gray",
-    borderRadius: "5px",
-  },
+    padding: "15px",
+    borderBottom: "1px solid #D1D5DB",
+    textAlign: "center"
+};
 
-  button: {
-    padding: "10px",
-    background: "#2563eb",
-    color: "white",
-    border: "none",
-    cursor: "pointer",
-  },
+// TABLE CELL STYLE
 
-  dashboard: {
-    display: "flex",
-    height: "100vh",
-  },
+const tableCell = {
 
-  sidebar: {
-    width: "200px",
-    background: "#1e293b",
-    color: "white",
-    padding: "20px",
-  },
-
-  logoutBtn: {
-    marginTop: "20px",
-    padding: "10px",
-    background: "red",
-    color: "white",
-    border: "none",
-    cursor: "pointer",
-  },
-
-  main: {
-    flex: 1,
-    padding: "20px",
-    background: "#f1f5f9",
-  },
-
-  cards: {
-    display: "grid",
-    gridTemplateColumns: "repeat(4, 1fr)",
-    gap: "10px",
-    marginBottom: "20px",
-  },
-
-  card: {
-    padding: "20px",
-    color: "white",
-    borderRadius: "10px",
-    textAlign: "center",
-  },
-
-  tableBox: {
-    background: "white",
-    padding: "20px",
-    borderRadius: "10px",
-  },
-
-  tableHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    marginBottom: "10px",
-  },
-
-  search: {
-    padding: "8px",
-    width: "200px",
-  },
-
-  exportBtn: {
-    padding: "8px",
-    background: "#2563eb",
-    color: "white",
-    border: "none",
-  },
-
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-  },
+    padding: "15px",
+    borderBottom: "1px solid #E5E7EB"
 };
 
 export default App;
